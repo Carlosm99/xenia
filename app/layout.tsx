@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Xenia Zetino · Calculadora PEPS",
+  title: "Xenia Zetino · PEPS — Soporte IT",
   description:
-    "Secuenciación FIFO para clínica médica — tiempo de flujo y retrasos. Proyecto de Xenia Zetino.",
+    "Secuenciación FIFO para empresa de soporte IT y servidores: tiempos de flujo y SLA. Proyecto de Xenia Zetino.",
 };
 
 export default function RootLayout({

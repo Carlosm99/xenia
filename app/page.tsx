@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type Patient = {
+type Ticket = {
   id: string;
   name: string;
   arrival: number;
@@ -12,7 +12,7 @@ type Patient = {
 
 type ResultRow = {
   order: number;
-  patient: Patient;
+  ticket: Ticket;
   start: number;
   finish: number;
   flowTime: number;
@@ -25,22 +25,22 @@ function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-const EXAMPLE_PATIENTS: Omit<Patient, "id">[] = [
-  { name: "Elena Vázquez", arrival: 0, processing: 2, due: 5 },
-  { name: "Marcus Chen", arrival: 1, processing: 4, due: 6 },
-  { name: "Priya Nair", arrival: 2, processing: 1, due: 4 },
-  { name: "James Okafor", arrival: 3, processing: 3, due: 7 },
-  { name: "Sofía Lindström", arrival: 4, processing: 2, due: 8 },
+const EXAMPLE_TICKETS: Omit<Ticket, "id">[] = [
+  { name: "Backup incremental — DB producción", arrival: 0, processing: 2, due: 5 },
+  { name: "Migración VM a clúster Hyper-V", arrival: 1, processing: 4, due: 6 },
+  { name: "Revisión RAID almacenamiento NAS", arrival: 2, processing: 1, due: 4 },
+  { name: "Incidente crítico — correo Exchange", arrival: 3, processing: 3, due: 7 },
+  { name: "Parche de seguridad Windows Server", arrival: 4, processing: 2, due: 8 },
 ];
 
-function computePeps(patients: Patient[]): ResultRow[] {
-  const sorted = [...patients].sort((a, b) => a.arrival - b.arrival);
+function computePeps(tickets: Ticket[]): ResultRow[] {
+  const sorted = [...tickets].sort((a, b) => a.arrival - b.arrival);
   let prevFinish = 0;
-  return sorted.map((patient, index) => {
-    const start = Math.max(patient.arrival, prevFinish);
-    const finish = start + patient.processing;
-    const flowTime = finish - patient.arrival;
-    const tardiness = Math.max(0, finish - patient.due);
+  return sorted.map((ticket, index) => {
+    const start = Math.max(ticket.arrival, prevFinish);
+    const finish = start + ticket.processing;
+    const flowTime = finish - ticket.arrival;
+    const tardiness = Math.max(0, finish - ticket.due);
     prevFinish = finish;
     const isLate = tardiness > 0;
     const status = isLate
@@ -48,7 +48,7 @@ function computePeps(patients: Patient[]): ResultRow[] {
       : "✓ A tiempo";
     return {
       order: index + 1,
-      patient,
+      ticket,
       start,
       finish,
       flowTime,
@@ -70,7 +70,7 @@ export default function Home() {
   const [arrival, setArrival] = useState("");
   const [processing, setProcessing] = useState("");
   const [due, setDue] = useState("");
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [formulasOpen, setFormulasOpen] = useState(false);
 
@@ -78,9 +78,9 @@ export default function Home() {
     if (!results || results.length === 0) return null;
     const n = results.length;
     const sumFlow = results.reduce((s, r) => s + r.flowTime, 0);
-    const sumProc = results.reduce((s, r) => s + r.patient.processing, 0);
+    const sumProc = results.reduce((s, r) => s + r.ticket.processing, 0);
     const sumTard = results.reduce((s, r) => s + r.tardiness, 0);
-    const arrivals = results.map((r) => r.patient.arrival);
+    const arrivals = results.map((r) => r.ticket.arrival);
     const finishes = results.map((r) => r.finish);
     const makespan = Math.max(...finishes) - Math.min(...arrivals);
     const avgCompletion = sumFlow / n;
@@ -95,13 +95,13 @@ export default function Home() {
     };
   }, [results]);
 
-  function addPatient(e: React.FormEvent) {
+  function addTicket(e: React.FormEvent) {
     e.preventDefault();
     const a = Number(arrival);
     const p = Number(processing);
     const d = Number(due);
     if (!name.trim() || Number.isNaN(a) || Number.isNaN(p) || Number.isNaN(d)) return;
-    setPatients((prev) => [
+    setTickets((prev) => [
       ...prev,
       { id: uid(), name: name.trim(), arrival: a, processing: p, due: d },
     ]);
@@ -112,21 +112,21 @@ export default function Home() {
     setResults(null);
   }
 
-  function removePatient(id: string) {
-    setPatients((prev) => prev.filter((x) => x.id !== id));
+  function removeTicket(id: string) {
+    setTickets((prev) => prev.filter((x) => x.id !== id));
     setResults(null);
   }
 
   function loadExample() {
-    setPatients(
-      EXAMPLE_PATIENTS.map((p) => ({ ...p, id: uid() }))
+    setTickets(
+      EXAMPLE_TICKETS.map((p) => ({ ...p, id: uid() }))
     );
     setResults(null);
   }
 
   function calculate() {
-    if (patients.length === 0) return;
-    setResults(computePeps(patients));
+    if (tickets.length === 0) return;
+    setResults(computePeps(tickets));
   }
 
   return (
@@ -145,14 +145,14 @@ export default function Home() {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100">
-                Calculadora PEPS · Clínica médica
+                Calculadora PEPS · Soporte IT y servidores
               </p>
               <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
                 Xenia Zetino
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-blue-50 sm:text-[15px]">
-                Planificación primero en entrar, primero en salir (FIFO): tiempos de flujo,
-                retrasos e indicadores en un solo panel.
+                Cola de trabajo FIFO para tickets: tiempos de flujo, cumplimiento de SLA e
+                indicadores operativos.
               </p>
             </div>
           </div>
@@ -163,22 +163,22 @@ export default function Home() {
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-7">
           <section className={`order-1 ${cardClass}`}>
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A5F9E] sm:text-xs">
-              Añadir paciente
+              Registrar ticket
             </h2>
-            <form onSubmit={addPatient} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
+            <form onSubmit={addTicket} className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-3">
               <label className="sm:col-span-2">
-                <span className="text-xs font-medium text-slate-600">Nombre del paciente</span>
+                <span className="text-xs font-medium text-slate-600">Descripción del ticket</span>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={inputClass}
-                  placeholder="Nombre completo"
-                  autoComplete="name"
+                  placeholder="Ej. Actualización firmware firewall"
+                  autoComplete="off"
                 />
               </label>
               <label>
-                <span className="text-xs font-medium text-slate-600">Hora de llegada (días)</span>
+                <span className="text-xs font-medium text-slate-600">Llegada a cola (días)</span>
                 <input
                   type="number"
                   step="any"
@@ -189,7 +189,7 @@ export default function Home() {
                 />
               </label>
               <label>
-                <span className="text-xs font-medium text-slate-600">Tiempo de procesamiento (días)</span>
+                <span className="text-xs font-medium text-slate-600">Tiempo de resolución (días)</span>
                 <input
                   type="number"
                   step="any"
@@ -201,7 +201,7 @@ export default function Home() {
                 />
               </label>
               <label className="sm:col-span-2">
-                <span className="text-xs font-medium text-slate-600">Fecha límite (días)</span>
+                <span className="text-xs font-medium text-slate-600">Compromiso SLA (días)</span>
                 <input
                   type="number"
                   step="any"
@@ -216,7 +216,7 @@ export default function Home() {
                   type="submit"
                   className="min-h-11 w-full rounded-xl bg-[#1A5F9E] px-4 py-2.5 text-base font-semibold text-white shadow-md shadow-slate-900/10 transition hover:bg-[#154a80] active:scale-[0.99] sm:w-auto sm:min-w-[140px] sm:text-sm"
                 >
-                  Añadir paciente
+                  Añadir ticket
                 </button>
                 <button
                   type="button"
@@ -231,35 +231,35 @@ export default function Home() {
             <div className="mt-6 border-t border-slate-200/80 pt-5">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#1A5F9E] sm:text-xs">
-                  Lista de pacientes ({patients.length})
+                  Cola de tickets ({tickets.length})
                 </h2>
                 <button
                   type="button"
                   onClick={calculate}
-                  disabled={patients.length === 0}
+                  disabled={tickets.length === 0}
                   className="min-h-11 w-full rounded-xl border-2 border-[#1A5F9E] bg-white px-4 py-2.5 text-base font-semibold text-[#1A5F9E] shadow-sm transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 disabled:opacity-60 active:scale-[0.99] sm:w-auto sm:min-w-[120px] sm:text-sm"
                 >
                   Calcular
                 </button>
               </div>
-              {patients.length === 0 ? (
+              {tickets.length === 0 ? (
                 <p className="mt-3 text-sm leading-relaxed text-slate-500">
-                  Aún no hay pacientes. Añada filas o cargue el ejemplo.
+                  Aún no hay tickets. Añada filas o cargue el ejemplo.
                 </p>
               ) : (
                 <ul className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200/80 bg-slate-50/50">
-                  {patients.map((p) => (
+                  {tickets.map((p) => (
                     <li key={p.id} className="px-3 py-3 sm:py-2.5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <p className="font-medium leading-snug text-slate-800">{p.name}</p>
                           <p className="mt-1 text-xs text-slate-500">
-                            Lleg. {p.arrival} · Proc. {p.processing} · Venc. {p.due}
+                            Lleg. {p.arrival} · Resol. {p.processing} · SLA {p.due}
                           </p>
                         </div>
                         <button
                           type="button"
-                          onClick={() => removePatient(p.id)}
+                          onClick={() => removeTicket(p.id)}
                           className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-lg leading-none text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 active:bg-rose-100"
                           aria-label={`Quitar ${p.name}`}
                         >
@@ -280,14 +280,14 @@ export default function Home() {
             {!results || results.length === 0 ? (
               <p className="mt-4 text-sm leading-relaxed text-slate-500">
                 Pulse <span className="font-medium text-slate-700">Calcular</span> para ver la
-                secuencia FIFO y los indicadores.
+                secuencia FIFO y los KPIs de la cola de soporte.
               </p>
             ) : (
               <>
                 <div className="mt-4 space-y-3 md:hidden">
                   {results.map((r) => (
                     <div
-                      key={r.patient.id}
+                      key={r.ticket.id}
                       className={
                         r.isLate
                           ? "rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900 shadow-sm"
@@ -299,18 +299,18 @@ export default function Home() {
                           <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
                             Orden {r.order}
                           </p>
-                          <p className="font-medium">{r.patient.name}</p>
+                          <p className="font-medium">{r.ticket.name}</p>
                         </div>
                         <p className="text-right text-xs leading-snug">{r.status}</p>
                       </div>
                       <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 text-xs sm:text-sm">
                         <div>
                           <dt className="text-slate-600 opacity-90">Llegada</dt>
-                          <dd className="font-mono tabular-nums">{r.patient.arrival}</dd>
+                          <dd className="font-mono tabular-nums">{r.ticket.arrival}</dd>
                         </div>
                         <div>
-                          <dt className="text-slate-600 opacity-90">Procesamiento</dt>
-                          <dd className="font-mono tabular-nums">{r.patient.processing}</dd>
+                          <dt className="text-slate-600 opacity-90">Resolución</dt>
+                          <dd className="font-mono tabular-nums">{r.ticket.processing}</dd>
                         </div>
                         <div>
                           <dt className="text-slate-600 opacity-90">Inicio</dt>
@@ -325,8 +325,8 @@ export default function Home() {
                           <dd className="font-mono tabular-nums">{r.flowTime}</dd>
                         </div>
                         <div>
-                          <dt className="text-slate-600 opacity-90">Fecha límite</dt>
-                          <dd className="font-mono tabular-nums">{r.patient.due}</dd>
+                          <dt className="text-slate-600 opacity-90">SLA</dt>
+                          <dd className="font-mono tabular-nums">{r.ticket.due}</dd>
                         </div>
                         <div className="col-span-2">
                           <dt className="text-slate-600 opacity-90">Retraso</dt>
@@ -342,13 +342,13 @@ export default function Home() {
                     <thead>
                       <tr className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-600">
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Orden</th>
-                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Paciente</th>
+                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Ticket</th>
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Llegada</th>
-                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Procesamiento</th>
+                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Resolución</th>
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Inicio</th>
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Fin</th>
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Tiempo flujo</th>
-                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Fecha límite</th>
+                        <th className="whitespace-nowrap px-2 py-2.5 font-semibold">SLA</th>
                         <th className="whitespace-nowrap px-2 py-2.5 font-semibold">Retraso</th>
                         <th className="min-w-28 px-2 py-2.5 font-semibold">Estado</th>
                       </tr>
@@ -356,7 +356,7 @@ export default function Home() {
                     <tbody>
                       {results.map((r) => (
                         <tr
-                          key={r.patient.id}
+                          key={r.ticket.id}
                           className={
                             r.isLate
                               ? "bg-red-50 text-red-900"
@@ -367,13 +367,13 @@ export default function Home() {
                             {r.order}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-medium">
-                            {r.patient.name}
+                            {r.ticket.name}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-mono text-xs">
-                            {r.patient.arrival}
+                            {r.ticket.arrival}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-mono text-xs">
-                            {r.patient.processing}
+                            {r.ticket.processing}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-mono text-xs">
                             {r.start}
@@ -385,7 +385,7 @@ export default function Home() {
                             {r.flowTime}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-mono text-xs">
-                            {r.patient.due}
+                            {r.ticket.due}
                           </td>
                           <td className="border-b border-slate-100 px-2 py-2.5 font-mono text-xs">
                             {r.tardiness}
@@ -419,11 +419,11 @@ export default function Home() {
                   <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1A5F9E]">
                     {kpis.utilization.toFixed(1)}%
                   </p>
-                  <p className="text-xs text-slate-500">Σ procesamiento ÷ horizonte</p>
+                  <p className="text-xs text-slate-500">Σ resolución ÷ horizonte</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 shadow-sm sm:py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Media de trabajos en sistema
+                    Media de tickets en sistema
                   </p>
                   <p className="mt-1 text-2xl font-semibold tabular-nums text-[#1A5F9E]">
                     {kpis.avgJobsInSystem.toFixed(2)}
@@ -463,7 +463,7 @@ export default function Home() {
                   </div>
                   <div>
                     <dt className="font-semibold text-slate-800">Tiempo de finalización</dt>
-                    <dd className="mt-1 font-mono text-xs text-slate-600">inicio + procesamiento</dd>
+                    <dd className="mt-1 font-mono text-xs text-slate-600">inicio + tiempo de resolución</dd>
                   </div>
                   <div>
                     <dt className="font-semibold text-slate-800">Tiempo de flujo</dt>
@@ -472,7 +472,7 @@ export default function Home() {
                   <div>
                     <dt className="font-semibold text-slate-800">Retraso</dt>
                     <dd className="mt-1 font-mono text-xs text-slate-600">
-                      max(0, fin − fecha límite)
+                      max(0, fin − SLA comprometido)
                     </dd>
                   </div>
                   <div>
@@ -490,11 +490,11 @@ export default function Home() {
                   <div>
                     <dt className="font-semibold text-slate-800">Utilización</dt>
                     <dd className="mt-1 font-mono text-xs text-slate-600">
-                      Σ(procesamiento) ÷ horizonte × 100%
+                      Σ(resolución) ÷ horizonte × 100%
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-semibold text-slate-800">Media de trabajos en sistema</dt>
+                    <dt className="font-semibold text-slate-800">Media de tickets en sistema</dt>
                     <dd className="mt-1 font-mono text-xs text-slate-600">
                       Σ(tiempo de flujo) ÷ horizonte
                     </dd>
