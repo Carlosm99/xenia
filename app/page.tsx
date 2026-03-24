@@ -33,6 +33,19 @@ const EXAMPLE_TICKETS: Omit<Ticket, "id">[] = [
   { name: "Parche de seguridad Windows Server", arrival: 4, processing: 2, due: 8 },
 ];
 
+const INVENTORY_ITEMS: { name: string; detail?: string; optional?: boolean }[] = [
+  { name: "Discos duros", detail: "HDD y SSD" },
+  { name: "Memorias RAM" },
+  { name: "Fuentes de poder" },
+  { name: "Tarjetas madre" },
+  { name: "Procesadores" },
+  { name: "Ventiladores y sistema de enfriamiento" },
+  { name: "Cables", detail: "SATA, poder, red" },
+  { name: "Tarjetas de red" },
+  { name: "Pasta térmica" },
+  { name: "UPS o reguladores", optional: true },
+];
+
 function computePeps(tickets: Ticket[]): ResultRow[] {
   const sorted = [...tickets].sort((a, b) => a.arrival - b.arrival);
   let prevFinish = 0;
@@ -151,8 +164,9 @@ export default function Home() {
                 Xenia Zetino
               </h1>
               <p className="mt-2 max-w-2xl text-sm leading-relaxed text-blue-50 sm:text-[15px]">
-                Cola de trabajo FIFO para tickets: tiempos de flujo, cumplimiento de SLA e
-                indicadores operativos.
+                Soporte IT y servidores con inventario de repuestos y herramientas. La calculadora
+                modela la cola de tickets en FIFO (PEPS); abajo se detalla cómo el mismo criterio
+                ordena el uso del material del almacén.
               </p>
             </div>
           </div>
@@ -160,6 +174,66 @@ export default function Home() {
       </header>
 
       <main className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-10">
+        <section className={`${cardClass} mb-6 lg:mb-7`}>
+          <div className="flex flex-col gap-6 lg:flex-row lg:gap-10">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A5F9E] sm:text-xs">
+                Inventario · Herramientas y repuestos
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Catálogo operativo de la empresa para ejecutar servicios de campo y taller.
+              </p>
+              <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {INVENTORY_ITEMS.map((item) => (
+                  <li
+                    key={item.name}
+                    className="flex items-start gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm"
+                  >
+                    <span
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1A5F9E]"
+                      aria-hidden
+                    />
+                    <span>
+                      <span className="font-medium text-slate-800">
+                        {item.name}
+                        {item.optional ? (
+                          <span className="ml-1 text-xs font-normal text-slate-500">(opcional)</span>
+                        ) : null}
+                      </span>
+                      {item.detail ? (
+                        <span className="mt-0.5 block text-xs text-slate-600">{item.detail}</span>
+                      ) : null}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="min-w-0 flex-1 rounded-2xl border border-sky-200/80 bg-sky-50/60 p-4 sm:p-5">
+              <h3 className="text-sm font-semibold text-slate-900">Dónde aplica PEPS (FIFO)</h3>
+              <ul className="mt-3 list-disc space-y-3 pl-4 text-sm leading-relaxed text-slate-700 marker:text-[#1A5F9E]">
+                <li>
+                  <strong className="font-semibold text-slate-800">Cola de tickets (esta calculadora).</strong>{" "}
+                  Primero en entrar, primero en salir: se ordenan los tickets por momento de llegada
+                  a cola; el técnico o el banco de trabajo atiende en ese orden cuando la capacidad
+                  es secuencial. Los tiempos de resolución y el SLA se calculan con esa secuencia.
+                </li>
+                <li>
+                  <strong className="font-semibold text-slate-800">Salida de inventario.</strong>{" "}
+                  Las piezas y consumibles que ingresaron antes al almacén (compras, recepciones, RMA)
+                  deben salir primero al despacho por ticket o por orden de trabajo. Así se evita que
+                  discos, RAM, pasta térmica o cables “viejos” queden obsoletos al fondo del estante,
+                  se homogeniza la rotación y se facilita la trazabilidad en auditorías.
+                </li>
+                <li>
+                  Los ítems marcados como opcionales (p. ej. UPS o reguladores) siguen la misma
+                  lógica cuando están en stock: primero lo recibido antes, al asignarlo a un
+                  proyecto o instalación.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
         <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-7">
           <section className={`order-1 ${cardClass}`}>
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A5F9E] sm:text-xs">

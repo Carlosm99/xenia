@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Xenia Zetino · PEPS — Soporte IT",
   description:
-    "Secuenciación FIFO para empresa de soporte IT y servidores: tiempos de flujo y SLA. Proyecto de Xenia Zetino.",
+    "PEPS/FIFO para cola de tickets e inventario de repuestos (soporte IT y servidores). Proyecto de Xenia Zetino.",
 };
 
 export default function RootLayout({
