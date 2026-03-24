@@ -46,6 +46,19 @@ const INVENTORY_ITEMS: { name: string; detail?: string; optional?: boolean }[] =
   { name: "UPS o reguladores", optional: true },
 ];
 
+const INVENTORY_POLICY: { product: string; stockMin: number }[] = [
+  { product: "Memorias RAM", stockMin: 20 },
+  { product: "Discos duros (HDD / SSD)", stockMin: 15 },
+  { product: "Fuentes de poder", stockMin: 8 },
+  { product: "Tarjetas madre", stockMin: 6 },
+  { product: "Procesadores", stockMin: 6 },
+  { product: "Ventiladores / enfriamiento", stockMin: 12 },
+  { product: "Cables (SATA, poder, red)", stockMin: 30 },
+  { product: "Tarjetas de red", stockMin: 10 },
+  { product: "Pasta térmica", stockMin: 18 },
+  { product: "UPS o reguladores", stockMin: 4 },
+];
+
 function computePeps(tickets: Ticket[]): ResultRow[] {
   const sorted = [...tickets].sort((a, b) => a.arrival - b.arrival);
   let prevFinish = 0;
@@ -78,6 +91,11 @@ const inputClass =
 const cardClass =
   "rounded-2xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-900/5 sm:p-6";
 
+const numberFormatter = new Intl.NumberFormat("es-ES", {
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
+
 export default function Home() {
   const [name, setName] = useState("");
   const [arrival, setArrival] = useState("");
@@ -107,6 +125,16 @@ export default function Home() {
       avgTardiness,
     };
   }, [results]);
+
+  const inventoryResult = useMemo(
+    () =>
+      INVENTORY_POLICY.map((item) => {
+        const safetyStock = item.stockMin * 0.25;
+        const total = item.stockMin + safetyStock;
+        return { ...item, safetyStock, total };
+      }),
+    []
+  );
 
   function addTicket(e: React.FormEvent) {
     e.preventDefault();
@@ -207,6 +235,52 @@ export default function Home() {
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200/90 shadow-sm shadow-slate-900/4">
+                <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-linear-to-r from-sky-50/90 to-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#1A5F9E]">
+                    Resultado final (tabla)
+                  </p>
+                  <span className="hidden text-[10px] font-medium uppercase tracking-wider text-slate-400 sm:inline">
+                    Seguridad = 25% × mínimo
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[560px] border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="bg-[#1A5F9E] text-[11px] uppercase tracking-wide text-white">
+                        <th className="px-4 py-3 font-semibold">Producto</th>
+                        <th className="px-4 py-3 font-semibold">Stock mínimo</th>
+                        <th className="px-4 py-3 font-semibold">Stock seguridad</th>
+                        <th className="px-4 py-3 font-semibold">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inventoryResult.map((row, i) => (
+                        <tr
+                          key={row.product}
+                          className={
+                            i % 2 === 0
+                              ? "border-b border-slate-100 bg-white last:border-b-0"
+                              : "border-b border-slate-100 bg-slate-50/70 last:border-b-0"
+                          }
+                        >
+                          <td className="px-4 py-2.5 font-medium text-slate-800">{row.product}</td>
+                          <td className="px-4 py-2.5 font-mono tabular-nums text-slate-700">
+                            {numberFormatter.format(row.stockMin)}
+                          </td>
+                          <td className="px-4 py-2.5 font-mono tabular-nums text-slate-700">
+                            {numberFormatter.format(row.safetyStock)}
+                          </td>
+                          <td className="px-4 py-2.5 font-mono tabular-nums font-medium text-slate-900">
+                            {numberFormatter.format(row.total)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
             <div className="min-w-0 flex-1 rounded-2xl border border-sky-200/80 bg-sky-50/60 p-4 sm:p-5">
               <h3 className="text-sm font-semibold text-slate-900">Dónde aplica PEPS (FIFO)</h3>
