@@ -1608,7 +1608,7 @@ export default function Home() {
           </section>
 
           <section className={cardClass}>
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A5F9E] sm:text-xs">
                   Matriz de inventario
@@ -1618,6 +1618,14 @@ export default function Home() {
                 </p>
                 <p className="mt-2 text-xs leading-snug text-slate-500 md:hidden">
                   Vista en tarjetas en móvil; tabla completa desde tablet.
+                </p>
+              </div>
+              <div className="max-w-md rounded-xl border border-slate-300 bg-white px-3 py-2.5 shadow-sm sm:px-4 sm:py-3">
+                <p className="text-sm leading-relaxed text-slate-800">
+                  <span className="font-semibold">Política automatizada:</span>{" "}
+                  (Demanda Diaria Promedio * Días de Entrega del Proveedor) +
+                  Margen de Seguridad. Ejemplo para SSD: (1 disco/día * 4 días
+                  de espera) + 3 de seguridad = 7 unidades.
                 </p>
               </div>
             </div>
