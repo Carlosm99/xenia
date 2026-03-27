@@ -857,9 +857,18 @@ export default function Home() {
               <h4 className="text-sm font-semibold text-slate-900">
                 Cómo se obtienen los resultados finales
               </h4>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                En simple: primero ordenamos los trabajos por urgencia (RC más
+                bajo), luego sumamos sus tiempos para ver cuándo termina cada
+                uno (acumulado), y comparamos ese fin contra su TR; si termina
+                después, esa diferencia es el retraso.
+              </p>
               <div className="mt-3 grid grid-cols-1 gap-3 text-sm text-slate-700 lg:grid-cols-2">
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <p className="font-medium text-slate-800">Retraso total</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Suma de todos los retrasos individuales de la secuencia.
+                  </p>
                   <p className="mt-1 font-mono text-xs text-slate-600">
                     Σ(retraso) ={" "}
                     {xeniaFlowRows.map((r) => r.delay).join(" + ")} ={" "}
@@ -868,12 +877,18 @@ export default function Home() {
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <p className="font-medium text-slate-800">A tiempo</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Cantidad de trabajos que terminan sin retraso.
+                  </p>
                   <p className="mt-1 font-mono text-xs text-slate-600">
                     Conteo de retraso = 0 → {xeniaKpis.onTimeJobs}
                   </p>
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <p className="font-medium text-slate-800">Tardíos</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Trabajos que sí terminaron después de su TR.
+                  </p>
                   <p className="mt-1 font-mono text-xs text-slate-600">
                     Total trabajos - a tiempo = {xeniaFlowRows.length} -{" "}
                     {xeniaKpis.onTimeJobs} = {xeniaKpis.lateJobs}
@@ -881,6 +896,9 @@ export default function Home() {
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <p className="font-medium text-slate-800">Retraso promedio</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Retraso medio por trabajo en toda la secuencia.
+                  </p>
                   <p className="mt-1 font-mono text-xs text-slate-600">
                     Retraso total ÷ total trabajos = {xeniaKpis.totalDelay} ÷{" "}
                     {xeniaFlowRows.length} = {xeniaKpis.avgDelay.toFixed(2)}
