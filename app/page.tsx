@@ -304,7 +304,9 @@ export default function Home() {
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [formulasOpen, setFormulasOpen] = useState(false);
   const [inventoryFormulasOpen, setInventoryFormulasOpen] = useState(false);
-  const [mainTab, setMainTab] = useState<"peps" | "inventario" | "xenia">(
+  const [mainTab, setMainTab] = useState<
+    "peps" | "inventario" | "razon-critica"
+  >(
     "peps",
   );
   const [inventorySkuRows, setInventorySkuRows] = useState<InventorySkuRow[]>(
@@ -550,13 +552,13 @@ export default function Home() {
             <button
               type="button"
               role="tab"
-              id="tab-xenia"
-              aria-selected={mainTab === "xenia"}
-              aria-controls="panel-xenia"
-              tabIndex={mainTab === "xenia" ? 0 : -1}
-              onClick={() => setMainTab("xenia")}
+              id="tab-razon-critica"
+              aria-selected={mainTab === "razon-critica"}
+              aria-controls="panel-razon-critica"
+              tabIndex={mainTab === "razon-critica" ? 0 : -1}
+              onClick={() => setMainTab("razon-critica")}
               className={
-                mainTab === "xenia"
+                mainTab === "razon-critica"
                   ? "flex shrink-0 touch-manipulation items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm shadow-slate-900/10 sm:gap-2 sm:px-4 sm:text-sm"
                   : "flex shrink-0 touch-manipulation items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium text-slate-600 transition hover:text-slate-800 sm:gap-2 sm:px-4 sm:text-sm"
               }
@@ -572,7 +574,7 @@ export default function Home() {
                 <circle cx="12" cy="12" r="9" />
                 <path d="M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
               </svg>
-              Xenia
+              Razón Crítica
             </button>
             </div>
           </div>
@@ -580,10 +582,10 @@ export default function Home() {
       </div>
 
       <div
-        id="panel-xenia"
+        id="panel-razon-critica"
         role="tabpanel"
-        aria-labelledby="tab-xenia"
-        hidden={mainTab !== "xenia"}
+        aria-labelledby="tab-razon-critica"
+        hidden={mainTab !== "razon-critica"}
       >
         <main className="mx-auto max-w-6xl px-3 pb-10 pt-6 sm:px-5 sm:pb-10 sm:py-10">
           <section className={`${cardClass} mb-6`}>
