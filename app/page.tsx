@@ -852,6 +852,42 @@ export default function Home() {
                 </p>
               </div>
             </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <h4 className="text-sm font-semibold text-slate-900">
+                Cómo se obtienen los resultados finales
+              </h4>
+              <div className="mt-3 grid grid-cols-1 gap-3 text-sm text-slate-700 lg:grid-cols-2">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="font-medium text-slate-800">Retraso total</p>
+                  <p className="mt-1 font-mono text-xs text-slate-600">
+                    Σ(retraso) ={" "}
+                    {xeniaFlowRows.map((r) => r.delay).join(" + ")} ={" "}
+                    {xeniaKpis.totalDelay}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="font-medium text-slate-800">A tiempo</p>
+                  <p className="mt-1 font-mono text-xs text-slate-600">
+                    Conteo de retraso = 0 → {xeniaKpis.onTimeJobs}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="font-medium text-slate-800">Tardíos</p>
+                  <p className="mt-1 font-mono text-xs text-slate-600">
+                    Total trabajos - a tiempo = {xeniaFlowRows.length} -{" "}
+                    {xeniaKpis.onTimeJobs} = {xeniaKpis.lateJobs}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5">
+                  <p className="font-medium text-slate-800">Retraso promedio</p>
+                  <p className="mt-1 font-mono text-xs text-slate-600">
+                    Retraso total ÷ total trabajos = {xeniaKpis.totalDelay} ÷{" "}
+                    {xeniaFlowRows.length} = {xeniaKpis.avgDelay.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
           </section>
         </main>
       </div>
