@@ -21,6 +21,13 @@ type ResultRow = {
   isLate: boolean;
 };
 
+type XeniaJob = {
+  job: string;
+  description: string;
+  tr: number;
+  tp: number;
+};
+
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 }
@@ -51,6 +58,14 @@ const EXAMPLE_TICKETS: Omit<Ticket, "id">[] = [
     processing: 2,
     due: 8,
   },
+];
+
+const XENIA_JOBS: XeniaJob[] = [
+  { job: "A", description: "Cambio de disco duro", tr: 4, tp: 2 },
+  { job: "B", description: "Instalaciones de RAM", tr: 3, tp: 1 },
+  { job: "C", description: "Reparación servidor", tr: 6, tp: 3 },
+  { job: "D", description: "Diagnóstico general", tr: 2, tp: 2 },
+  { job: "E", description: "Cambio de fuente", tr: 5, tp: 1 },
 ];
 
 const INVENTORY_ITEMS: { name: string; detail?: string; optional?: boolean }[] =
@@ -254,6 +269,32 @@ function computeInventoryLine(row: InventorySkuRow) {
   return { available, costAvailable, cogs, ending, alert };
 }
 
+function computeRcRows(jobs: XeniaJob[]) {
+  return jobs.map((job) => ({
+    ...job,
+    rc: job.tr / job.tp,
+  }));
+}
+
+function computePriorityRows(rcRows: ReturnType<typeof computeRcRows>) {
+  return [...rcRows].sort((a, b) => {
+    if (a.rc === b.rc) return a.job.localeCompare(b.job);
+    return a.rc - b.rc;
+  });
+}
+
+function computeFlowRows(priorityRows: ReturnType<typeof computePriorityRows>) {
+  let accumulated = 0;
+  return priorityRows.map((row) => {
+    accumulated += row.tp;
+    return {
+      ...row,
+      accumulated,
+      delay: Math.max(0, accumulated - row.tr),
+    };
+  });
+}
+
 export default function Home() {
   const [name, setName] = useState("");
   const [arrival, setArrival] = useState("");
@@ -263,7 +304,9 @@ export default function Home() {
   const [results, setResults] = useState<ResultRow[] | null>(null);
   const [formulasOpen, setFormulasOpen] = useState(false);
   const [inventoryFormulasOpen, setInventoryFormulasOpen] = useState(false);
-  const [mainTab, setMainTab] = useState<"peps" | "inventario">("peps");
+  const [mainTab, setMainTab] = useState<"peps" | "inventario" | "xenia">(
+    "peps",
+  );
   const [inventorySkuRows, setInventorySkuRows] = useState<InventorySkuRow[]>(
     () => DEFAULT_INVENTORY_SKU.map((r) => ({ ...r, id: uid() })),
   );
@@ -306,6 +349,29 @@ export default function Home() {
       }),
     [],
   );
+
+  const [xeniaJobs, setXeniaJobs] = useState<XeniaJob[]>(XENIA_JOBS);
+
+  const xeniaRcRows = useMemo(() => computeRcRows(xeniaJobs), [xeniaJobs]);
+  const xeniaPriorityRows = useMemo(() => computePriorityRows(xeniaRcRows), [
+    xeniaRcRows,
+  ]);
+  const xeniaFlowRows = useMemo(() => computeFlowRows(xeniaPriorityRows), [
+    xeniaPriorityRows,
+  ]);
+  const xeniaKpis = useMemo(() => {
+    const totalDelay = xeniaFlowRows.reduce((s, r) => s + r.delay, 0);
+    const onTimeJobs = xeniaFlowRows.filter((r) => r.delay === 0).length;
+    const lateJobs = xeniaFlowRows.length - onTimeJobs;
+    const avgDelay = xeniaFlowRows.length > 0 ? totalDelay / xeniaFlowRows.length : 0;
+    return { totalDelay, onTimeJobs, lateJobs, avgDelay };
+  }, [xeniaFlowRows]);
+
+  function patchXeniaJob(index: number, patch: Partial<XeniaJob>) {
+    setXeniaJobs((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
+  }
 
   function addTicket(e: React.FormEvent) {
     e.preventDefault();
@@ -481,9 +547,311 @@ export default function Home() {
               </svg>
               Inventario
             </button>
+            <button
+              type="button"
+              role="tab"
+              id="tab-xenia"
+              aria-selected={mainTab === "xenia"}
+              aria-controls="panel-xenia"
+              tabIndex={mainTab === "xenia" ? 0 : -1}
+              onClick={() => setMainTab("xenia")}
+              className={
+                mainTab === "xenia"
+                  ? "flex shrink-0 touch-manipulation items-center gap-1.5 whitespace-nowrap rounded-full bg-white px-3 py-2 text-xs font-semibold text-slate-900 shadow-sm shadow-slate-900/10 sm:gap-2 sm:px-4 sm:text-sm"
+                  : "flex shrink-0 touch-manipulation items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium text-slate-600 transition hover:text-slate-800 sm:gap-2 sm:px-4 sm:text-sm"
+              }
+            >
+              <svg
+                className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8 8l8 8M16 8l-8 8" strokeLinecap="round" />
+              </svg>
+              Xenia
+            </button>
             </div>
           </div>
         </div>
+      </div>
+
+      <div
+        id="panel-xenia"
+        role="tabpanel"
+        aria-labelledby="tab-xenia"
+        hidden={mainTab !== "xenia"}
+      >
+        <main className="mx-auto max-w-6xl px-3 pb-10 pt-6 sm:px-5 sm:pb-10 sm:py-10">
+          <section className={`${cardClass} mb-6`}>
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1A5F9E] sm:text-xs">
+              Investigación de Operaciones · Método de Razón Crítica
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Ejercicio de priorización de 5 trabajos IT usando RC = TR ÷ TP,
+              con orden de ejecución y análisis de retraso acumulado.
+            </p>
+          </section>
+
+          <section className={`${cardClass} mb-6`}>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Trabajos (datos iniciales)
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Edita TR y TP para recalcular RC, prioridad y retraso en tiempo real.
+            </p>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-[#1A5F9E] text-[11px] uppercase tracking-wide text-white">
+                    <th className="px-3 py-2.5 font-semibold">Trabajo</th>
+                    <th className="px-3 py-2.5 font-semibold">Descripción</th>
+                    <th className="px-3 py-2.5 font-semibold">TR</th>
+                    <th className="px-3 py-2.5 font-semibold">TP</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {xeniaJobs.map((row, i) => (
+                    <tr
+                      key={`xenia-job-${i}`}
+                      className={
+                        i % 2 === 0
+                          ? "border-b border-slate-100 bg-white"
+                          : "border-b border-slate-100 bg-slate-50/70"
+                      }
+                    >
+                      <td className="px-2 py-2">
+                        <input
+                          type="text"
+                          value={row.job}
+                          onChange={(e) =>
+                            patchXeniaJob(i, { job: e.target.value.toUpperCase() })
+                          }
+                          className={`${tableInputClass} font-mono font-semibold text-slate-900`}
+                          autoComplete="off"
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="text"
+                          value={row.description}
+                          onChange={(e) =>
+                            patchXeniaJob(i, { description: e.target.value })
+                          }
+                          className={tableInputClass}
+                          autoComplete="off"
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          step="any"
+                          min={0}
+                          value={row.tr}
+                          onChange={(e) => {
+                            const n = e.target.valueAsNumber;
+                            if (!Number.isNaN(n))
+                              patchXeniaJob(i, { tr: Math.max(0, n) });
+                          }}
+                          className={`${tableNumericInputClass} font-mono tabular-nums text-slate-700`}
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          step="any"
+                          min={0.01}
+                          value={row.tp}
+                          onChange={(e) => {
+                            const n = e.target.valueAsNumber;
+                            if (!Number.isNaN(n))
+                              patchXeniaJob(i, { tp: Math.max(0.01, n) });
+                          }}
+                          className={`${tableNumericInputClass} font-mono tabular-nums text-slate-700`}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <section className={cardClass}>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Cálculo razón crítica
+              </h3>
+              <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full min-w-[420px] border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="bg-[#1A5F9E] text-[11px] uppercase tracking-wide text-white">
+                      <th className="px-3 py-2.5 font-semibold">Trabajo</th>
+                      <th className="px-3 py-2.5 font-semibold">TR</th>
+                      <th className="px-3 py-2.5 font-semibold">TP</th>
+                      <th className="px-3 py-2.5 font-semibold">RC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {xeniaRcRows.map((row, i) => (
+                      <tr
+                        key={`xenia-rc-${i}`}
+                        className={
+                          i % 2 === 0
+                            ? "border-b border-slate-100 bg-white"
+                            : "border-b border-slate-100 bg-slate-50/70"
+                        }
+                      >
+                        <td className="px-3 py-2.5 font-mono font-semibold text-slate-900">
+                          {row.job}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                          {row.tr}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                          {row.tp}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono font-semibold tabular-nums text-[#1A5F9E]">
+                          {numberFormatter.format(row.rc)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+
+            <section className={cardClass}>
+              <h3 className="text-sm font-semibold text-slate-900">
+                Orden de prioridad
+              </h3>
+              <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full min-w-[360px] border-collapse text-left text-sm">
+                  <thead>
+                    <tr className="bg-[#1A5F9E] text-[11px] uppercase tracking-wide text-white">
+                      <th className="px-3 py-2.5 font-semibold">Orden</th>
+                      <th className="px-3 py-2.5 font-semibold">Trabajo</th>
+                      <th className="px-3 py-2.5 font-semibold">RC</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {xeniaPriorityRows.map((row, i) => (
+                      <tr
+                        key={`xenia-priority-${i}-${row.job}`}
+                        className={
+                          i % 2 === 0
+                            ? "border-b border-slate-100 bg-white"
+                            : "border-b border-slate-100 bg-slate-50/70"
+                        }
+                      >
+                        <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                          {i + 1}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono font-semibold text-slate-900">
+                          {row.job}
+                        </td>
+                        <td className="px-3 py-2.5 font-mono font-semibold tabular-nums text-[#1A5F9E]">
+                          {numberFormatter.format(row.rc)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          </div>
+
+          <section className={`${cardClass} mt-6`}>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Tiempo de flujo y retraso
+            </h3>
+            <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
+              <table className="w-full min-w-[720px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="bg-[#1A5F9E] text-[11px] uppercase tracking-wide text-white">
+                    <th className="px-3 py-2.5 font-semibold">Trabajo</th>
+                    <th className="px-3 py-2.5 font-semibold">TP</th>
+                    <th className="px-3 py-2.5 font-semibold">Acumulado</th>
+                    <th className="px-3 py-2.5 font-semibold">TR</th>
+                    <th className="px-3 py-2.5 font-semibold">Retraso</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {xeniaFlowRows.map((row, i) => (
+                    <tr
+                      key={`xenia-flow-${i}-${row.job}`}
+                      className={
+                        i % 2 === 0
+                          ? "border-b border-slate-100 bg-white"
+                          : "border-b border-slate-100 bg-slate-50/70"
+                      }
+                    >
+                      <td className="px-3 py-2.5 font-mono font-semibold text-slate-900">
+                        {row.job}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                        {row.tp}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                        {row.accumulated}
+                      </td>
+                      <td className="px-3 py-2.5 font-mono tabular-nums text-slate-700">
+                        {row.tr}
+                      </td>
+                      <td
+                        className={
+                          row.delay === 0
+                            ? "px-3 py-2.5 font-mono font-semibold tabular-nums text-emerald-700"
+                            : "px-3 py-2.5 font-mono font-semibold tabular-nums text-amber-700"
+                        }
+                      >
+                        {row.delay}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  Retraso total
+                </p>
+                <p className="mt-1 font-mono text-2xl font-semibold text-[#1A5F9E]">
+                  {xeniaKpis.totalDelay}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  A tiempo
+                </p>
+                <p className="mt-1 font-mono text-2xl font-semibold text-emerald-700">
+                  {xeniaKpis.onTimeJobs}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  Tardíos
+                </p>
+                <p className="mt-1 font-mono text-2xl font-semibold text-amber-700">
+                  {xeniaKpis.lateJobs}
+                </p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+                <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                  Retraso promedio
+                </p>
+                <p className="mt-1 font-mono text-2xl font-semibold text-[#1A5F9E]">
+                  {xeniaKpis.avgDelay.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </section>
+        </main>
       </div>
 
       <div
@@ -1462,7 +1830,7 @@ export default function Home() {
               <table className="w-full min-w-[1320px] border-collapse text-left text-xs sm:text-sm">
                 <thead>
                   <tr className="bg-[#1A5F9E] text-[10px] uppercase tracking-wide text-white sm:text-[11px]">
-                    <th className="sticky left-0 z-10 min-w-[13.5rem] bg-[#1A5F9E] px-2 py-2.5 font-semibold">
+                    <th className="sticky left-0 z-10 min-w-54 bg-[#1A5F9E] px-2 py-2.5 font-semibold">
                       Código
                     </th>
                     <th className="min-w-[18rem] px-2 py-2.5 font-semibold">
@@ -1520,8 +1888,8 @@ export default function Home() {
                         <td
                           className={
                             i % 2 === 0
-                              ? "sticky left-0 z-1 min-w-[13.5rem] border-r border-slate-100 bg-white px-1.5 py-1"
-                              : "sticky left-0 z-1 min-w-[13.5rem] border-r border-slate-100 bg-slate-50/80 px-1.5 py-1"
+                              ? "sticky left-0 z-1 min-w-54 border-r border-slate-100 bg-white px-1.5 py-1"
+                              : "sticky left-0 z-1 min-w-54 border-r border-slate-100 bg-slate-50/80 px-1.5 py-1"
                           }
                         >
                           <input
