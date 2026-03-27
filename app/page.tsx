@@ -867,21 +867,13 @@ export default function Home() {
           style={{ backgroundColor: "#1A5F9E" }}
         >
           <div className="mx-auto max-w-6xl px-3 py-6 sm:px-5 sm:py-8">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-              <div
-                className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-white/35 bg-white/15 shadow-sm backdrop-blur-[2px]"
-                aria-hidden
-              >
-                <span className="text-lg font-bold tracking-tight text-white">
-                  XZ
-                </span>
-              </div>
+            <div className="min-w-0">
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-100">
                   Calculadora PEPS · Soporte IT y servidores
                 </p>
                 <h1 className="mt-2 text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                  Xenia Zetino
+                  Empresa de Soporte IT y Servidores (Regla Razón Crítica - RC)
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-blue-50 sm:text-[15px]">
                   Soporte IT y servidores con inventario de repuestos y
